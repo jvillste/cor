@@ -3,12 +3,12 @@
             [compojure.core :as compojure]
             [ring.middleware.multipart-params :as multipart-params]))
 
-(defn dispatch-command [body api-namespace]
+(defn dispatch-command [body state-atom api-namespace]
   (try (let [[command & arguments] body]
          (timbre/info "handling " (pr-str body))
          (let [result (if-let [function-var (get (ns-publics api-namespace) (symbol (name command)))]
                         (if (:cor/api (meta function-var))
-                          (apply @function-var arguments)
+                          (apply @function-var (concat [state-atom] arguments))
                           (str "unknown command: " command))
                         (str "unknown command: " command))]
 
@@ -22,16 +22,18 @@
          (.printStackTrace e *out*)
          (throw e))))
 
-(defn hanadle-post [body api-namespace]
+(defn hanadle-post [body state-atom api-namespace]
   (-> body
       slurp
       read-string
-      (dispatch-command api-namespace)
+      (dispatch-command state-atom api-namespace)
       pr-str))
 
-(defn api-route [path api-namespace]
-  (compojure/POST path {body :body} (hanadle-post body
-                                                  api-namespace)))
+(defn api-routes [path initial-state api-namespace]
+  (let [state-atom (atom initial-state)]
+    [(compojure/POST path {body :body} (hanadle-post body
+                                                     state-atom
+                                                     api-namespace))]))
 
 
 
