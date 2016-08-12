@@ -1,6 +1,7 @@
 (ns cor.api
   (:require [taoensso.timbre :as timbre]
             [compojure.core :as compojure]
+            [compojure.route :as route]
             [ring.middleware.multipart-params :as multipart-params]))
 
 (defn dispatch-command [body state-atom api-namespace]
@@ -35,6 +36,13 @@
                                                      state-atom
                                                      api-namespace))]))
 
+
+(defn app [initial-state api-namespace]
+  (apply compojure/routes (concat (api-routes "/api"
+                                              initial-state
+                                              api-namespace)
+                                  [(route/resources "/")
+                                   (route/not-found "Not Found")])))
 
 
 (defn file-post-route [path file-handler]

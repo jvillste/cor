@@ -54,9 +54,19 @@
       (handle-result-from-chan callback)))
 
 
+(defn start-transaction-loop [state-atom]
+  (async/go-loop []
+    (when-let [command (async/<! (:transaction-channel @state-atom))]
+      (swap! state-atom command)
+      (recur))))
 
-(defn apply-to-state [state function & arguments]
-  (async/put! (:transaction-channel state)
+(defn create-state-atom []
+  (let [state-atom (reagent/atom {:transaction-channel (async/chan)})]
+    (start-transaction-loop state-atom)
+    state-atom))
+
+(defn apply-to-state [transaction-channel function & arguments]
+  (async/put! transaction-channel
               (fn [state]
                 (apply function state arguments))))
 
@@ -78,18 +88,18 @@
          function
          arguments))
 
-(defn apply-to-page-state [state page-key function & arguments]
-  (async/put! (:transaction-channel state)
+(defn apply-to-page-state [transaction-channel page-key function & arguments]
+  (async/put! transaction-channel
               (fn [state]
-                (apply update-in-given-page-state
+                (apply update-in-page-state
                        state
                        page-key
                        []
                        function
                        arguments))))
 
-(defn apply-assoc-to-page-state [state page-key & kvs]
-  (async/put! (:transaction-channel state)
+(defn apply-assoc-to-page-state [transaction-channel page-key & kvs]
+  (async/put! transaction-channel
               (fn [state]
                 (apply update-in-page-state
                        state
