@@ -33,7 +33,6 @@
 #_ (set-tempid-partition -1)
 
 (defn set-tempid-partitions [transaction-statement db]
-  (println transaction-statement)
   (-> transaction-statement
       (update-in [1] set-tempid-partition)
       (cond-> (ref? db
@@ -84,14 +83,18 @@
 
 
 (defn transact [db-uri transaction]
+
+
   (let [conn (d/connect db-uri)
         db (d/db conn)]
+
+    (println "transacting " transaction)
     (d/transact conn
                 #_[[:db/add #db/id[:db.part/user -1] :queue/key "1"]]
                 (map (fn [transaction-statement]
                        (set-tempid-partitions transaction-statement
                                               db))
-                     transaction))))
+                     (map vec transaction)))))
 
 (defn datomic-datom-to-datascript-datom [datomic-datom db-uri]
   (datascript-db/->Datom (:e datomic-datom)
