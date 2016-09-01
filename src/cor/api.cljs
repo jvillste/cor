@@ -5,7 +5,8 @@
             [cljs.core.async :as async]
             [cljs.pprint :as pprint]
             [cljs-http.client :as http]
-            [cljs.reader :as reader])
+            [cljs.reader :as reader]
+            [cor.state :as state])
   (:require-macros [cljs.core.async.macros :as async]))
 
 
@@ -57,7 +58,7 @@
 (defn call-and-apply-to-state [state command function]
   (call command
         (fn [result]
-          (apply-to-state state (fn [state]
+          (state/apply-to-state state (fn [state]
                                   (function result state))))))
 
 
