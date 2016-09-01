@@ -2,7 +2,8 @@
   (:require [taoensso.timbre :as timbre]
             [compojure.core :as compojure]
             [compojure.route :as route]
-            [ring.middleware.multipart-params :as multipart-params]))
+            [ring.middleware.multipart-params :as multipart-params]
+            [cor.web-socket :as web-socket]))
 
 (defn dispatch-command [body state-atom api-namespace]
   (try (let [[command & arguments] body]
@@ -38,12 +39,25 @@
 
 
 (defn app [initial-state api-namespace]
-  (apply compojure/routes (concat (api-routes "/api"
-                                              initial-state
-                                              api-namespace)
-                                  [(route/resources "/")
-                                   (route/not-found "Not Found")])))
+  (apply compojure/routes
+         (concat (api-routes "/api"
+                             initial-state
+                             api-namespace)
+                 [(route/resources "/")
+                  (route/not-found "Not Found")])))
 
+
+(defn app-with-web-socket [initial-state  api-namespace]
+  (let [channel-socket (web-socket/create-channel-socket)]
+    (-> (apply compojure/routes
+               (concat (api-routes "/api"
+                                   (conj initial-state
+                                         {:channel-socket channel-socket})
+                                   api-namespace)
+                       (web-socket/routes "/chsk" channel-socket)
+                       [(route/resources "/")
+                        (route/not-found "Not Found")]))
+        (web-socket/wrap))))
 
 (defn file-post-route [path file-handler]
   (multipart-params/wrap-multipart-params
