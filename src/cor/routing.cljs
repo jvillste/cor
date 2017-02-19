@@ -1,5 +1,4 @@
 (ns cor.routing
-  (:require-macros [secretary.core :refer [defroute]])
   (:import goog.History)
   (:require [secretary.core :as secretary]
             [goog.events :as events]
@@ -13,6 +12,7 @@
     (events/listen
      EventType/NAVIGATE
      (fn [event]
+       (println "dispatching to " (prn-str (.-token event)))
        (secretary/dispatch! (.-token event))))
     (.setEnabled true)))
 
@@ -20,3 +20,4 @@
   (secretary/set-config! :prefix "#")
 
   (hook-browser-navigation!))
+

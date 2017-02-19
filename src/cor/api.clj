@@ -3,6 +3,7 @@
             [compojure.core :as compojure]
             [compojure.route :as route]
             [ring.middleware.multipart-params :as multipart-params]
+            [ring.middleware.cors :as cors]
             [cor.web-socket :as web-socket]))
 
 (defn dispatch-command [body state-atom api-namespace]
@@ -11,7 +12,9 @@
          (let [result (if-let [function-var (get (ns-publics api-namespace) (symbol (name command)))]
                         (if (:cor/api (meta function-var))
                           (apply @function-var (concat [state-atom] arguments))
-                          (str "unknown command: " command))
+                          (if (:cor.api/stateles (meta function-var))
+                            (apply @function-var arguments)
+                            (str "unknown command: " command)))
                         (str "unknown command: " command))]
 
            (let [result-message (pr-str result)]
@@ -43,9 +46,14 @@
          (concat (api-routes "/api"
                              initial-state
                              api-namespace)
-                 [(route/resources "/")
+                 [(compojure/GET "/api" [] "api")
+                  (route/resources "/")
                   (route/not-found "Not Found")])))
 
+(defn wrap-cors [routes access-control-allow-origin access-control-allow-methods]
+  (cors/wrap-cors routes
+                  :access-control-allow-origin access-control-allow-origin
+                  :access-control-allow-methods access-control-allow-methods))
 
 (defn app-with-web-socket [initial-state  api-namespace]
   (let [channel-socket (web-socket/create-channel-socket)]

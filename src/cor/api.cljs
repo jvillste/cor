@@ -11,10 +11,11 @@
 
 
 (def file-url "/file")
-(def api-url "/api")
+(def ^:dynamic api-url "/api")
 
 (defn call-to-chan [body]
-  (let [channel (async/chan)]
+  (let [channel (async/chan)
+        api-url api-url]
     (async/go (let [response (-> (async/<! (http/post api-url
                                                       {:edn-params body
                                                        :with-credentials? false}))
@@ -59,6 +60,6 @@
   (call command
         (fn [result]
           (state/apply-to-state state (fn [state]
-                                  (function result state))))))
+                                        (function result state))))))
 
 
