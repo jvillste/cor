@@ -8,6 +8,7 @@
                  [datascript "0.15.0"]
                  [com.taoensso/timbre "4.7.3"]
                  [cljs-http "0.1.40"]
+                 [clj-http "3.7.0"]
                  [http-kit "2.1.18"]
                  [ring-cors "0.1.9"]
                  [javax.servlet/javax.servlet-api "3.1.0"]
