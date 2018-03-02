@@ -33,10 +33,14 @@
          (.printStackTrace e *out*)
          (throw e))))
 
+(defn safely-read-string [string]
+  (binding [*read-eval* false]
+    (read-string string)))
+
 (defn hanadle-post [body state-atom api-namespace]
   (-> body
       slurp
-      read-string
+      safely-read-string
       (dispatch-command state-atom api-namespace)
       pr-str))
 
@@ -78,7 +82,7 @@
    (compojure/POST path
                    request
                    (-> (file-handler (get (:params request) "file")
-                                     (read-string (get (:params request) "command")))
+                                     (safely-read-string (get (:params request) "command")))
                        pr-str))))
 
 
