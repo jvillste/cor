@@ -6,6 +6,12 @@
             [ring.middleware.cors :as cors]
             [cor.web-socket :as web-socket]))
 
+(defn api-vars [api-namespace]
+  (->> (ns-publics api-namespace)
+       (vals)
+       (filter (fn [var]
+                 (:cor/api (meta var))))))
+
 (defn dispatch-command [body state-atom api-namespace]
   (try (let [[command & arguments] body]
          (timbre/info "handling " (pr-str body))
