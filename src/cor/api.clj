@@ -1,5 +1,6 @@
 (ns cor.api
   (:require [taoensso.timbre :as timbre]
+            [clojure.java.io :as io]
             [compojure.core :as compojure]
             [compojure.route :as route]
             [ring.middleware.multipart-params :as multipart-params]
@@ -38,11 +39,13 @@
     (read-string string)))
 
 (defn hanadle-post [body state-atom api-namespace]
-  (-> body
-      slurp
-      safely-read-string
-      (dispatch-command state-atom api-namespace)
-      pr-str))
+  (let [result (-> body
+                   slurp
+                   safely-read-string
+                   (dispatch-command state-atom api-namespace))]
+    (if (bytes? result)
+     (io/input-stream result)
+      (pr-str result))))
 
 (defn api-routes [path initial-state api-namespace]
   (let [state-atom (atom initial-state)]
