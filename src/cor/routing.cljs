@@ -17,7 +17,7 @@
     (.setEnabled true)))
 
 (defn setup-routes []
-  (secretary/set-config! :prefix "#")
+  #_(secretary/set-config! :prefix "#")
 
   (hook-browser-navigation!))
 

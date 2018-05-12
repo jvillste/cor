@@ -5,6 +5,7 @@
             [compojure.route :as route]
             [ring.middleware.multipart-params :as multipart-params]
             [ring.middleware.cors :as cors]
+            [ring.util.response :as response]
             [cor.web-socket :as web-socket]))
 
 (defn api-vars [api-namespace]
@@ -13,21 +14,31 @@
        (filter (fn [var]
                  (:cor/api (meta var))))))
 
+(defn unknown-command-response [command]
+  (response/not-found (pr-str {:error "unknown command"
+                               :command command})))
+
+(defn command-response [result]
+  (if (bytes? result)
+    (-> (response/response (io/input-stream result))
+        (response/header "Content-Type" "bytes"))
+    (-> (response/response (pr-str result))
+        (response/header "Content-Type" "edn"))))
+
 (defn dispatch-command [body state-atom api-namespace]
   (try (let [[command & arguments] body]
          (timbre/info "handling " (pr-str body))
          (let [result (if-let [function-var (get (ns-publics api-namespace) (symbol (name command)))]
                         (if (:cor/api (meta function-var))
-                          (apply @function-var (concat [state-atom] arguments))
+                          (command-response (apply @function-var (concat [state-atom] arguments)))
                           (if (:cor.api/stateles (meta function-var))
-                            (apply @function-var arguments)
-                            (str "unknown command: " command)))
-                        (str "unknown command: " command))]
+                            (command-response (apply @function-var arguments))
+                            (unknown-command-response command)))
+                        (unknown-command-response command))]
 
            (let [result-message (pr-str result)]
              (timbre/info "result " (subs result-message 0 (min (.length result-message)
                                                                 300))))
-           
            result))
        (catch Exception e
          (timbre/info "Exception in handle- post" e)
@@ -39,13 +50,10 @@
     (read-string string)))
 
 (defn hanadle-post [body state-atom api-namespace]
-  (let [result (-> body
-                   slurp
-                   safely-read-string
-                   (dispatch-command state-atom api-namespace))]
-    (if (bytes? result)
-     (io/input-stream result)
-      (pr-str result))))
+  (-> body
+      slurp
+      safely-read-string
+      (dispatch-command state-atom api-namespace)))
 
 (defn api-routes [path initial-state api-namespace]
   (let [state-atom (atom initial-state)]

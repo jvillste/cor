@@ -1,6 +1,10 @@
 (ns cor.client
   (:require (cor [api :as api])
-            [clj-http.client :as client]))
+            [clojure.edn :as edn]
+            [clj-http.client :as client]
+            [argumentica.log :as log]
+            [clojure.java.io :as io])
+  (:import [java.io PushbackReader]))
 
 (defn client-multimethods [client-namespace]
   (->> (ns-publics client-namespace)
@@ -38,7 +42,7 @@
      (~define-method ~client-class-symbol client-multimethod-var#)))
 
 (defmacro define-in-process-client [client-class-symbol client-namespace]
-  `(do 
+  `(do
      (defrecord ~client-class-symbol [~'state-atom])
      ~(emit-define-client client-class-symbol
                        client-namespace
@@ -51,11 +55,15 @@
   (.addMethod @client-multimethod-var
               client-class
               (fn [this & arguments]
-                (:body (client/post (:url this) {:body (pr-str (into [(:name (meta client-multimethod-var))]
-                                                               arguments))})))))
+                (let [result (client/post (:url this) {:body (pr-str (into [(:name (meta client-multimethod-var))]
+                                                                           arguments))
+                                                       :as :byte-array})]
+                  (if (= "edn" (get-in result [:headers "Content-Type"]))
+                    (edn/read (PushbackReader. (io/reader (:body result))))
+                    (:body result))))))
 
 (defmacro define-http-client [client-class-symbol client-namespace]
-  `(do 
+  `(do
      (defrecord ~client-class-symbol [~'url])
      ~(emit-define-client client-class-symbol
                           client-namespace
