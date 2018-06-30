@@ -2,7 +2,7 @@
   (:require (cor [api :as api])
             [clojure.edn :as edn]
             [clj-http.client :as client]
-            [argumentica.log :as log]
+            [logga.core :as logga]
             [clojure.java.io :as io])
   (:import [java.io PushbackReader]))
 
@@ -55,9 +55,11 @@
   (.addMethod @client-multimethod-var
               client-class
               (fn [this & arguments]
+                (logga/write (.getId (Thread/currentThread)) " sending " (:name (meta client-multimethod-var)))
                 (let [result (client/post (:url this) {:body (pr-str (into [(:name (meta client-multimethod-var))]
                                                                            arguments))
                                                        :as :byte-array})]
+                  (logga/write (.getId (Thread/currentThread)) " received " (:name (meta client-multimethod-var)))
                   (if (= "edn" (get-in result [:headers "Content-Type"]))
                     (edn/read (PushbackReader. (io/reader (:body result))))
                     (:body result))))))

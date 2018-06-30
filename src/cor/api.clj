@@ -6,7 +6,8 @@
             [ring.middleware.multipart-params :as multipart-params]
             [ring.middleware.cors :as cors]
             [ring.util.response :as response]
-            [cor.web-socket :as web-socket]))
+            [cor.web-socket :as web-socket]
+            [logga.core :as logga]))
 
 (defn api-vars [api-namespace]
   (->> (ns-publics api-namespace)
@@ -27,7 +28,7 @@
 
 (defn dispatch-command [body state-atom api-namespace]
   (try (let [[command & arguments] body]
-         (timbre/info "handling " (pr-str body))
+         (logga/write "handling " (pr-str body))
          (let [result (if-let [function-var (get (ns-publics api-namespace) (symbol (name command)))]
                         (if (:cor/api (meta function-var))
                           (command-response (apply @function-var (concat [state-atom] arguments)))
@@ -37,7 +38,7 @@
                         (unknown-command-response command))]
 
            (let [result-message (pr-str result)]
-             (timbre/info "result " (subs result-message 0 (min (.length result-message)
+             (logga/write "result " (subs result-message 0 (min (.length result-message)
                                                                 300))))
            result))
        (catch Exception e

@@ -13,4 +13,5 @@
                  [ring-cors "0.1.9"]
                  [javax.servlet/javax.servlet-api "3.1.0"]
                  [com.datomic/datomic-free "0.9.5372"]
-                 [com.taoensso/sente "1.9.0"]])
+                 [com.taoensso/sente "1.9.0"]
+                 [logga "0.1.0-SNAPSHOT"]])
