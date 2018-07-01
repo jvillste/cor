@@ -1,11 +1,8 @@
 (ns cor.datomic-pull-api
-  (:require
-   [datomic.api :as d]
-   [datascript.pull-parser :as dpp]
-   [agile-queue.server.db :as db])
-  (:import
-   [datomic Datom]
-   [datascript.pull_parser PullSpec]))
+  (:require [agile-queue.server.db :as db]
+            [datascript.pull-parser :as dpp]
+            [datomic.api :as d])
+  (:import datomic.Datom))
 
 (defn- into!
   [transient-coll items]

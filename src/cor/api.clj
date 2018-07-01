@@ -1,13 +1,13 @@
 (ns cor.api
-  (:require [taoensso.timbre :as timbre]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
             [compojure.core :as compojure]
             [compojure.route :as route]
-            [ring.middleware.multipart-params :as multipart-params]
-            [ring.middleware.cors :as cors]
-            [ring.util.response :as response]
             [cor.web-socket :as web-socket]
-            [logga.core :as logga]))
+            [logga.core :as logga]
+            [ring.middleware.cors :as cors]
+            [ring.middleware.multipart-params :as multipart-params]
+            [ring.util.response :as response]
+            [taoensso.timbre :as timbre]))
 
 (defn api-vars [api-namespace]
   (->> (ns-publics api-namespace)
